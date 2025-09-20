@@ -21,7 +21,7 @@ from questions import DEFAULT_QUESTIONS  # Separate file for questions
 app = Flask(__name__)
 app.secret_key = 'super_secret_key'  # Change to a secure random key in production
 app.config['UPLOAD_FOLDER'] = 'uploads'  # Folder for CSV uploads
-app.config['ALLOWED_EXTENSIONS'] = {'txt'}  # Allowed file types
+app.config['ALLOWED_EXTENSIONS'] = {'txt', 'jpg', 'png', 'jpeg'}  # Allowed file types
 app.config['APP_NAME'] = 'CloneMe'  # Define app name here
 
 # Ensure upload folder exists
@@ -87,7 +87,12 @@ def login():
 def home():
     if 'user_id' not in session:
         return redirect(url_for('login'))
-    return render_template('home.html')
+    conn = sqlite3.connect('users.db')
+    cursor = conn.cursor()
+    cursor.execute('SELECT id FROM clones WHERE user_id = ?', (session['user_id'],))
+    has_clone = cursor.fetchone() is not None
+    conn.close()
+    return render_template('home.html', has_clone=has_clone)
 
 @app.route('/create_clone', methods=['GET', 'POST'])
 def create_clone():
@@ -95,6 +100,15 @@ def create_clone():
         return redirect(url_for('login'))
     
     form = CloneCreationForm()
+
+    # Check if user has existing clone and pre-fill answers
+    conn = sqlite3.connect('users.db')
+    cursor = conn.cursor()
+    cursor.execute('SELECT answers_json FROM clones WHERE user_id = ?', (session['user_id'],))
+    existing_clone = cursor.fetchone()
+    conn.close()
+    pre_filled_answers = json.loads(existing_clone[0]) if existing_clone else {}
+
     form.questions = DEFAULT_QUESTIONS  # Attach questions for template rendering
     
     if form.validate_on_submit():
@@ -109,6 +123,14 @@ def create_clone():
             text_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
             text_file.save(text_path)
         
+        # Handle profile picture upload
+        profile_pic_file = form.profile_pic.data
+        profile_pic_path = None
+        if profile_pic_file and allowed_file(profile_pic_file.filename):
+            filename = secure_filename(profile_pic_file.filename)
+            profile_pic_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+            profile_pic_file.save(profile_pic_path)
+
         # Generate persona using LLM
         persona = generate_persona(answers, text_path)
         
@@ -130,16 +152,17 @@ def create_clone():
         conn = sqlite3.connect('users.db')
         cursor = conn.cursor()
         cursor.execute('''
-            INSERT INTO clones (user_id, answers_json, text_path, llm_conversation, persona)
-            VALUES (?, ?, ?, ?, ?)
-        ''', (session['user_id'], json.dumps(answers), text_path, llm_response, persona))
+            INSERT INTO clones (user_id, answers_json, text_path, llm_conversation, persona, profile_pic_path)
+            VALUES (?, ?, ?, ?, ?, ?)
+        ''', (session['user_id'], json.dumps(answers), text_path, llm_response, persona, profile_pic_path))
+        
         conn.commit()
         conn.close()
         
         flash('Clone created successfully!', 'success')
         return redirect(url_for('home'))
     
-    return render_template('create_clone.html', form=form)
+    return render_template('create_clone.html', form=form, pre_filled_answers=pre_filled_answers)
 
 @app.route('/date_clones')
 def date_clones():
@@ -150,7 +173,7 @@ def date_clones():
     conn = sqlite3.connect('users.db')
     cursor = conn.cursor()
     cursor.execute('''
-        SELECT c.id, u.username, c.answers_json, c.persona 
+        SELECT c.id, u.username, c.answers_json, c.persona, c.profile_pic_path 
         FROM clones c 
         JOIN users u ON c.user_id = u.id 
         WHERE c.user_id != ?
@@ -174,14 +197,14 @@ def date_clones():
     selected_clones = random.sample(other_clones, min(5, len(other_clones))) if other_clones else []
     
     clones_with_scores = []
-    for clone_id, username, answers_json, other_persona in selected_clones:
+    for clone_id, username, answers_json, other_persona, profile_pic_path in selected_clones:
         other_answers = json.loads(answers_json)
         score = calculate_compatibility(user_answers, other_answers)  # LLM-based score
         clones_with_scores.append({
             'id': clone_id,
             'username': username,
             'score': score,
-            'profile_pic': '/static/default_profile.png'  # Placeholder; add real upload later
+            'profile_pic': profile_pic_path or '/static/default_profile.png'  # Fallback if none
         })
     
     return render_template('date_clones.html', clones=clones_with_scores)
@@ -199,6 +222,10 @@ def view_match(clone_id):
     
     cursor.execute('SELECT answers_json, persona FROM clones WHERE id = ?', (clone_id,))
     other_clone = cursor.fetchone()
+    
+    # Fetch other username
+    cursor.execute('SELECT u.username FROM clones c JOIN users u ON c.user_id = u.id WHERE c.id = ?', (clone_id,))
+    other_username = cursor.fetchone()[0]
     conn.close()
     
     if not user_clone or not other_clone:
@@ -211,7 +238,10 @@ def view_match(clone_id):
     # Generate sample conversation using personas
     conversation = generate_conversation(user_answers, user_persona, other_answers, other_persona)
     
-    return render_template('view_match.html', conversation=conversation)
+    # Replace 'Other:' with '{other_username}:'
+    conversation = conversation.replace('Other:', f'{other_username}:')
+    
+    return render_template('view_match.html', conversation=conversation, other_username=other_username)
 
 @app.route('/logout')
 def logout():

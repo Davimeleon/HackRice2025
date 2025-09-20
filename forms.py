@@ -15,4 +15,5 @@ class LoginForm(FlaskForm):
 
 class CloneCreationForm(FlaskForm):
     text_file = FileField('Upload Text Messages File (optional, .txt)')
+    profile_pic = FileField('Upload Profile Picture (optional, .jpg, .png, .jpeg)')
     submit = SubmitField('Create Clone')

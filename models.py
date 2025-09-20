@@ -17,6 +17,7 @@ def init_db():
             user_id INTEGER NOT NULL,
             answers_json TEXT NOT NULL, -- JSON of question answers
             text_path TEXT, -- Path to uploaded text file
+            profile_pic_path TEXT, -- Path to uploaded profile picture
             llm_conversation TEXT, -- Stored LLM interaction
             persona TEXT, -- LLM-generated persona summary for bot
             FOREIGN KEY (user_id) REFERENCES users(id)

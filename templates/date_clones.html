@@ -27,6 +27,22 @@
         currentIndex = (currentIndex + direction + totalItems) % totalItems;
         slide.style.transform = `translateX(-${currentIndex * 100}%)`;
     }
+
+    // Add swipe support
+    let touchStartX = 0;
+    let touchEndX = 0;
+    const container = document.querySelector('.carousel-container');
+    container.addEventListener('touchstart', e => {
+        touchStartX = e.changedTouches[0].screenX;
+    });
+    container.addEventListener('touchend', e => {
+        touchEndX = e.changedTouches[0].screenX;
+        if (touchStartX - touchEndX > 50) {
+            moveSlide(1);  // Swipe left -> next
+        } else if (touchEndX - touchStartX > 50) {
+            moveSlide(-1);  // Swipe right -> prev
+        }
+    });
 </script>
 {% else %}
 <p>No other clones available yet.</p>

@@ -1,6 +1,7 @@
 # llm.py
 import json
 import google.generativeai as genai
+import os
 from questions import DEFAULT_QUESTIONS
 
 # Configure with your API key (use os.getenv('GOOGLE_API_KEY') in production)
@@ -37,7 +38,7 @@ def generate_conversation(user_answers, user_persona, other_answers, other_perso
         f"Other bot persona: {other_persona}\n"
         f"User profile: {json.dumps(user_answers)}\n"
         f"Other profile: {json.dumps(other_answers)}\n"
-        "Simulate a back-and-forth chat with exactly 20 lines of dialogue (10 messages from each bot, alternating), where each bot responds in their respective style, reflecting their interests and personality. Format as:\nUser: Message\nOther: Message\nUser: Message\n..."
+        "Simulate a back-and-forth chat with exactly 20 lines of dialogue (10 messages from each bot, alternating), where each bot responds in their respective style, reflecting their interests and personality. Format as:\nYou: Message\nOther: Message\nYou: Message\n..."
     )
     model = genai.GenerativeModel('gemini-1.5-flash')
     response = model.generate_content(prompt)

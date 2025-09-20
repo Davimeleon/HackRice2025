@@ -224,6 +224,9 @@ a:hover {
     min-width: 100%;
     box-sizing: border-box;
     text-align: center;
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }
 
 .profile-rectangle {
@@ -264,4 +267,36 @@ a:hover {
 
 .carousel-button.next {
     right: 10px;
+}
+
+.conversation-container {
+    max-height: 400px;
+    overflow-y: auto;
+    margin: 1rem 0;
+    padding: 1rem;
+    background-color: #F9F9F9; /* Light gray for contrast */
+    border-radius: 10px;
+}
+
+.conversation-line {
+    padding: 0.8rem;
+    margin: 0.5rem 0;
+    border-radius: 8px;
+    font-size: 1.1rem;
+    line-height: 1.5;
+    font-family: 'Roboto', sans-serif;
+}
+
+.user-message {
+    background-color: #E6F3FF; /* Light blue for user */
+    color: #1E88E5; /* Darker blue text */
+    text-align: left;
+    margin-right: 10%;
+}
+
+.other-message {
+    background-color: #FFE6F0; /* Light pink for other */
+    color: #C71585; /* Dark pink text, matching --button-color */
+    text-align: right;
+    margin-left: 10%;
 }
