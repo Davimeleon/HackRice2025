@@ -3,7 +3,7 @@ import os
 from groq import Groq
 
 client = Groq(
-    api_key=os.environ.get("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"),
+    api_key="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",
 )
 
 prompt = input("Ask away\n")
