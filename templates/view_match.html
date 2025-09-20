@@ -1,8 +1,151 @@
-{% extends 'base.html' %}
-{% block title %}View Match{% endblock %}
 {% block content %}
-<div class="conversation-container">
-    <h2>Sample Conversation</h2>
-    <p>{{ conversation }}</p>
+<style>
+/* ---- Scoped so styles don't leak site-wide ---- */
+.chat-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 8px;
+  box-sizing: border-box;
+}
+
+.chat {
+  width: 300px;
+  border: solid 1px #EEE;
+  display: flex;
+  flex-direction: column;
+  padding: 10px;
+  background: #fff;
+  border-radius: 10px;
+}
+
+.messages {
+  margin-top: 30px;
+  display: flex;
+  flex-direction: column;
+}
+
+.message {
+  border-radius: 20px;
+  padding: 8px 15px;
+  margin: 5px 0;
+  display: inline-block;
+  word-break: break-word;
+  white-space: pre-wrap; /* preserve newlines */
+}
+
+.yours { align-items: flex-start; }
+.yours .message {
+  margin-right: 25%;
+  background-color: #EEE;
+  position: relative;
+}
+.yours .message.last:before {
+  content: "";
+  position: absolute;
+  z-index: 0;
+  bottom: 0; left: -7px;
+  height: 20px; width: 20px;
+  background: #EEE;
+  border-bottom-right-radius: 15px;
+}
+.yours .message.last:after {
+  content: "";
+  position: absolute;
+  z-index: 1;
+  bottom: 0; left: -10px;
+  width: 10px; height: 20px;
+  background: #fff; /* match .chat bg */
+  border-bottom-right-radius: 10px;
+}
+
+.mine { align-items: flex-end; }
+.mine .message {
+  color: #fff;
+  margin-left: 25%;
+  background: rgb(0, 120, 254);
+  position: relative;
+}
+.mine .message.last:before {
+  content: "";
+  position: absolute;
+  z-index: 0;
+  bottom: 0; right: -8px;
+  height: 20px; width: 20px;
+  background: rgb(0, 120, 254);
+  border-bottom-left-radius: 15px;
+}
+.mine .message.last:after {
+  content: "";
+  position: absolute;
+  z-index: 1;
+  bottom: 0; right: -10px;
+  width: 10px; height: 20px;
+  background: #fff; /* match .chat bg */
+  border-bottom-left-radius: 10px;
+}
+
+/* Wider on larger screens */
+@media (min-width: 640px) { .chat { width: 480px; } }
+@media (min-width: 1024px) { .chat { width: 640px; } }
+</style>
+
+{# ---------- Parse transcript into [{who, text}] without 'continue' ---------- #}
+{% set ns = namespace(msgs=[], pending=None) %}
+{% for raw in conversation.split('\n') %}
+  {% set line = raw.strip() %}
+  {% if line %}
+    {% set lp = namespace(handled=False) %}
+
+    {# explicit prefixes: "You: ..." or "<other_username>: ..." #}
+    {% if line.startswith('You:') %}
+      {% set ns.msgs = ns.msgs + [{'who':'mine','text': line[4:].strip()}] %}
+      {% set ns.pending = None %}
+      {% set lp.handled = True %}
+    {% elif line.startswith(other_username ~ ':') %}
+      {% set ns.msgs = ns.msgs + [{'who':'yours','text': line[other_username|length + 1:].strip()}] %}
+      {% set ns.pending = None %}
+      {% set lp.handled = True %}
+    {% endif %}
+
+    {# standalone markers (adjust if your generator uses different tokens) #}
+    {% if not lp.handled %}
+      {% if line in ['Y', 'You'] %}
+        {% set ns.pending = 'mine' %}
+        {% set lp.handled = True %}
+      {% elif line in ['C', other_username] %}
+        {% set ns.pending = 'yours' %}
+        {% set lp.handled = True %}
+      {% endif %}
+    {% endif %}
+
+    {# regular content: use pending side; default to 'yours' #}
+    {% if not lp.handled %}
+      {% set ns.msgs = ns.msgs + [{'who': (ns.pending or 'yours'), 'text': line}] %}
+      {% set ns.pending = None %}
+    {% endif %}
+  {% endif %}
+{% endfor %}
+
+{# ---------- Render using your exact HTML structure ---------- #}
+<div class="chat-wrap">
+  <div class="chat" id="chat">
+    {% set N = ns.msgs|length %}
+    {% for i in range(N) %}
+      {% set m = ns.msgs[i] %}
+      {% set prev_same = i>0 and ns.msgs[i-1].who == m.who %}
+      {% set next_same = i+1 < N and ns.msgs[i+1].who == m.who %}
+
+      {% if not prev_same %}<div class="{{ m.who }} messages">{% endif %}
+        <div class="message {% if not next_same %}last{% endif %}">{{ m.text }}</div>
+      {% if not next_same %}</div>{% endif %}
+    {% endfor %}
+  </div>
 </div>
+
+<script>
+/* Auto-scroll to newest */
+const chat = document.getElementById('chat');
+if (chat) chat.scrollTop = chat.scrollHeight;
+</script>
 {% endblock %}
