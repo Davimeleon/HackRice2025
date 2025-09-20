@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+{% block title %}Login{% endblock %}
+{% block content %}
+<div class="form-container">
+    <h2>Login to {{ app_name }}</h2>
+    <form method="POST">
+        {{ form.hidden_tag() }}
+        <label>
+            {{ form.username.label }}
+            {{ form.username(class="form-input", placeholder="Enter your username") }}
+        </label>
+        <label>
+            {{ form.password.label }}
+            {{ form.password(class="form-input", placeholder="Enter your password") }}
+        </label>
+        {{ form.submit(class="form-submit") }}
+    </form>
+    <p>Don't have an account? <a href="{{ url_for('register') }}">Register here</a></p>
+</div>
+{% endblock %}

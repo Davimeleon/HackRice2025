@@ -1,0 +1,37 @@
+{% extends 'base.html' %}
+{% block title %}Create Clone{% endblock %}
+{% block content %}
+<div class="form-container">
+    <h2>Create Your {{ app_name }} Clone</h2>
+    <p class="intro-text">Answer these questions to help us build your AI clone. Feel free to skip any question by leaving it blank or selecting 'Skip'. Your responses will shape how your clone interacts in the dating world!</p>
+    <form method="POST" enctype="multipart/form-data">
+        {{ form.hidden_tag() }}
+        <div class="questions-section">
+            {% for q in form.questions %}
+            <div class="question-card">
+                <h3>{{ q.text }}</h3>
+                {% if q.type == 'multiple-choice' %}
+                <select name="{{ q.id }}" class="form-select">
+                    <option value="">Skip (optional)</option>
+                    {% for opt in q.options %}
+                    <option value="{{ opt }}">{{ opt }}</option>
+                    {% endfor %}
+                </select>
+                {% elif q.type == 'text' %}
+                <textarea name="{{ q.id }}" class="form-textarea" placeholder="Your answer (optional)"></textarea>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+        <div class="upload-section">
+            <h3>Upload Your Text Messages (Optional)</h3>
+            <p>Provide a text file of your sample text messages to refine your clone's conversation style.</p>
+            <label>
+                {{ form.text_file.label }}
+                {{ form.text_file(class="form-input-file") }}
+            </label>
+        </div>
+        {{ form.submit(class="form-submit") }}
+    </form>
+</div>
+{% endblock %}

@@ -1,0 +1,267 @@
+:root {
+    --background-color: #FF69B4; /* Hot pink, adjustable */
+    --accent-color: #FFFFFF; /* White for contrast */
+    --button-color: #C71585; /* Darker pink for buttons */
+    --text-color: #333333; /* Dark gray for text */
+}
+body {
+    background-color: var(--background-color);
+    font-family: 'Roboto', sans-serif;
+    color: var(--text-color);
+    margin: 0;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+.form-container, .home-container, .clones-list, .conversation-container {
+    background-color: var(--accent-color);
+    padding: 2.5rem;
+    border-radius: 15px;
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+    width: 400px;
+    text-align: center;
+    margin: 2rem auto;
+}
+h2 {
+    font-family: 'Playfair Display', serif;
+    font-size: 2.5rem;
+    color: var(--button-color);
+    margin-bottom: 1.5rem;
+}
+h3 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.8rem;
+    color: var(--button-color);
+    margin-bottom: 0.5rem;
+}
+label {
+    font-size: 1.2rem;
+    display: block;
+    margin: 0.5rem 0;
+}
+.form-input, .form-input-file {
+    width: 100%;
+    padding: 0.8rem;
+    font-size: 1.1rem;
+    border: 2px solid var(--button-color);
+    border-radius: 8px;
+    margin-bottom: 1rem;
+    box-sizing: border-box;
+}
+.form-input-file {
+    padding: 0.4rem;
+}
+.form-submit, .clone-button, .back-button {
+    background-color: var(--button-color);
+    color: var(--accent-color);
+    font-size: 1.2rem;
+    padding: 0.8rem 2rem;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-block;
+    transition: background-color 0.3s;
+}
+.form-submit:hover, .clone-button:hover, .back-button:hover {
+    background-color: #DB7093;
+}
+p {
+    font-size: 1rem;
+    margin-top: 1rem;
+}
+a {
+    color: var(--button-color);
+    text-decoration: none;
+    font-weight: 500;
+}
+a:hover {
+    text-decoration: underline;
+}
+.message {
+    color: #D32F2F;
+    font-size: 1rem;
+    margin: 1rem 0;
+}
+.message.success {
+    color: #2E7D32; /* Green for success */
+}
+.action-rectangles {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    margin-top: 1.5rem;
+}
+.action-rectangle {
+    background-color: #F5F5F5;
+    border-radius: 10px;
+    padding: 1.5rem;
+    text-align: center;
+    text-decoration: none;
+    transition: transform 0.2s, background-color 0.3s;
+}
+.action-rectangle:hover {
+    background-color: #FFE4E1;
+    transform: scale(1.05);
+}
+.action-rectangle.logout {
+    background-color: #FFCDD2;
+}
+.action-rectangle.logout:hover {
+    background-color: #EF9A9A;
+}
+.clones-container {
+    max-height: 400px;
+    overflow-y: auto;
+    margin: 1rem 0;
+}
+.clone-rectangle {
+    background-color: #F5F5F5;
+    border-radius: 10px;
+    padding: 1rem;
+    margin: 1rem 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+.profile-pic {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    object-fit: cover;
+    margin-bottom: 1rem;
+}
+.conversation-text {
+    font-size: 1.1rem;
+    line-height: 1.5;
+    text-align: left;
+    white-space: pre-wrap;
+}
+.intro-text {
+    font-size: 1.1rem;
+    margin-bottom: 2rem;
+    color: var(--text-color);
+}
+.questions-section {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+.question-card {
+    background-color: var(--card-background);
+    padding: 1.5rem;
+    border-radius: 10px;
+    border: 1px solid var(--border-color);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    transition: transform 0.2s;
+}
+.question-card:hover {
+    transform: translateY(-5px); /* Subtle lift for engagement */
+}
+.question-card h3 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.6rem;
+    color: var(--button-color);
+    margin-bottom: 1rem;
+}
+.form-select, .form-textarea {
+    width: 100%;
+    padding: 0.8rem;
+    font-size: 1.1rem;
+    border: 2px solid var(--button-color);
+    border-radius: 8px;
+    margin-bottom: 1rem;
+    box-sizing: border-box;
+    background-color: #FFFFFF;
+}
+.form-textarea {
+    height: 100px; /* Taller for text responses */
+    resize: vertical; /* Allow resizing */
+}
+.upload-section {
+    margin-top: 2rem;
+    padding: 1.5rem;
+    background-color: var(--card-background);
+    border-radius: 10px;
+    border: 1px solid var(--border-color);
+}
+.upload-section h3 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.6rem;
+    color: var(--button-color);
+    margin-bottom: 1rem;
+}
+.form-submit {
+    background-color: var(--button-color);
+    color: var(--accent-color);
+    font-size: 1.2rem;
+    padding: 0.8rem 2rem;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+    margin-top: 2rem;
+}
+.form-submit:hover {
+    background-color: #DB7093;
+}
+
+.carousel-container {
+    position: relative;
+    width: 100%;
+    max-width: 400px;
+    margin: 0 auto;
+    overflow: hidden;
+}
+
+.carousel-slide {
+    display: flex;
+    transition: transform 0.5s ease;
+}
+
+.carousel-item {
+    min-width: 100%;
+    box-sizing: border-box;
+    text-align: center;
+}
+
+.profile-rectangle {
+    background-color: #F5F5F5;
+    border-radius: 10px;
+    padding: 1.5rem;
+    margin: 1rem 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.compatibility-score {
+    font-size: 2.5rem;
+    font-weight: bold;
+    color: #FFD700; /* Bright yellow */
+    font-family: 'Comic Sans MS', cursive, sans-serif; /* Cartoonish font; fallback if not loaded */
+    margin: 1rem 0;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2); /* Fun shadow effect */
+}
+
+.carousel-button {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background-color: var(--button-color);
+    color: var(--accent-color);
+    border: none;
+    padding: 0.5rem 1rem;
+    cursor: pointer;
+    font-size: 1.5rem;
+    border-radius: 50%;
+}
+
+.carousel-button.prev {
+    left: 10px;
+}
+
+.carousel-button.next {
+    right: 10px;
+}

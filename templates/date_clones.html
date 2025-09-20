@@ -1,0 +1,34 @@
+{% block content %}
+<h2>Other Clones</h2>
+{% if clones %}
+<div class="carousel-container">
+    <div class="carousel-slide" id="carousel-slide">
+        {% for clone in clones %}
+        <div class="carousel-item">
+            <div class="profile-rectangle">
+                <img src="{{ clone.profile_pic }}" alt="Profile Picture" class="profile-pic">
+                <h3>{{ clone.username }}</h3>
+                <div class="compatibility-score">{{ clone.score }}%</div>
+                <a href="{{ url_for('view_match', clone_id=clone.id) }}" class="clone-button">Look at Conversation</a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    <button class="carousel-button prev" onclick="moveSlide(-1)">&lt;</button>
+    <button class="carousel-button next" onclick="moveSlide(1)">&gt;</button>
+</div>
+<script>
+    let currentIndex = 0;
+    const slide = document.getElementById('carousel-slide');
+    const items = document.querySelectorAll('.carousel-item');
+    const totalItems = items.length;
+
+    function moveSlide(direction) {
+        currentIndex = (currentIndex + direction + totalItems) % totalItems;
+        slide.style.transform = `translateX(-${currentIndex * 100}%)`;
+    }
+</script>
+{% else %}
+<p>No other clones available yet.</p>
+{% endif %}
+{% endblock %}

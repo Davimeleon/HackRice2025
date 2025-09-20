@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+{% block title %}Home{% endblock %}
+{% block content %}
+<div class="home-container">
+    <h2>Welcome, {{ session.username }}!</h2>
+    <p>Ready to find your perfect match?</p>
+    <div class="action-rectangles">
+        <a href="{{ url_for('create_clone') }}" class="action-rectangle">
+            <h3>Create a Clone</h3>
+            <p>Build your AI clone to represent you in the dating world.</p>
+        </a>
+        <a href="{{ url_for('date_clones') }}" class="action-rectangle">
+            <h3>Date Other Clones</h3>
+            <p>Explore matches and see how your clone connects with others.</p>
+        </a>
+        <a href="{{ url_for('logout') }}" class="action-rectangle logout">
+            <h3>Logout</h3>
+            <p>Sign out of your account.</p>
+        </a>
+    </div>
+</div>
+{% endblock %}
