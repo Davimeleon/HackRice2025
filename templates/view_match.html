@@ -1,125 +1,224 @@
 {% block content %}
 <style>
-/* ---- Scoped so styles don't leak site-wide ---- */
-.chat-wrap {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 8px;
-  box-sizing: border-box;
+/* Page baseline (page itself doesn't scroll because the phone viewport captures it) */
+:root {
+  --phone-w: 375px;    /* iPhone base width */
+  --phone-h: 812px;    /* iPhone 11/12-ish height */
+  --radius: 44px;      /* large to feel like a device */
 }
 
+
+body {
+    
+  margin: 0;
+  background: #f2f3f7;
+  font-family: "SF Pro Text", -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
+}
+
+.phone-stage {
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  align-items: center;   /* vertical center */
+  justify-content: center; /* horizontal center */
+  background: #f2f3f7;
+  overflow: hidden; /* stops body scrollbars if phone is tall */
+}
+
+/* Device shell */
+.phone-shell {
+  position: relative;
+  width: calc(var(--phone-w) + 24px);
+  height: calc(var(--phone-h) + 24px);
+  border-radius: calc(var(--radius) + 8px);
+  background: linear-gradient(180deg, #0b0c10, #1b1c22);
+  box-shadow:
+    0 20px 60px rgba(0,0,0,0.35),
+    0 6px 18px rgba(0,0,0,0.2) inset,
+    0 0 0 2px #15161b inset;
+  padding: 12px; /* bezel thickness */
+}
+
+/* Notch (simple) */
+.phone-notch {
+  position: absolute;
+  top: 8px; left: 50%;
+  transform: translateX(-50%);
+  width: 210px; height: 28px;
+  background: #0f1015;
+  border-bottom-left-radius: 18px;
+  border-bottom-right-radius: 18px;
+}
+
+/* Screen = the only scrollable area */
+.phone-screen {
+  position: relative;
+  width: var(--phone-w);
+  height: var(--phone-h);
+  border-radius: var(--radius);
+  background: #ffffff;
+  overflow-y: auto;              /* scroll inside only */
+  overscroll-behavior: contain;  /* stop scroll chaining to body */
+  -webkit-overflow-scrolling: touch; /* iOS momentum */
+  box-shadow: 0 0 0 1px #e5e7eb inset;
+}
+
+/* Fake iOS safe-area top spacer (under notch) */
+.safe-top {
+  height: 10px;
+}
+
+/* Chat card fills screen (no page scroll) */
 .chat {
-  width: 300px;
-  border: solid 1px #EEE;
+  min-height: calc(var(--phone-h) - 10px);
   display: flex;
   flex-direction: column;
-  padding: 10px;
   background: #fff;
-  border-radius: 10px;
 }
 
+/* Sticky header (banner) inside the phone */
+.chat-header {
+  position: sticky; top: 0;
+  z-index: 10;
+  display: flex; flex-direction: column; gap: 8px;
+  padding: 16px 18px 12px;
+  background: #ffffffcc; /* a bit translucent for depth */
+  -webkit-backdrop-filter: saturate(180%) blur(12px);
+  backdrop-filter: saturate(180%) blur(12px);
+  border-bottom: 1px solid #E5E5EA;
+}
+
+.header-top { display: flex; align-items: center; gap: 12px; }
+
+.avatar {
+  width: 40px; height: 40px; border-radius: 50%;
+  background: #E5E5EA; color: #111;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-weight: 600; font-size: 18px;
+}
+.title {
+  font-size: 20px; font-weight: 700; letter-spacing: -0.01em; color: #111;
+}
+
+.subline {
+  font-size: 14px; color: #6b7280;
+  display: flex; align-items: center; gap: 8px;
+}
+.pill {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 12.5px; padding: 4px 10px; border-radius: 999px;
+  background: #fff0f5; color: #d946ef; border: 1px solid #ffd6e8;
+}
+
+/* Messages area */
 .messages {
-  margin-top: 30px;
-  display: flex;
-  flex-direction: column;
+  padding: 14px 16px 26px; /* extra bottom pad for comfort */
+  display: flex; flex-direction: column;
 }
 
+/* Bubble base */
 .message {
-  border-radius: 20px;
-  padding: 8px 15px;
-  margin: 5px 0;
+  border-radius: 22px;
+  padding: 12px 16px;
+  margin: 4px 0;
   display: inline-block;
   word-break: break-word;
-  white-space: pre-wrap; /* preserve newlines */
+  white-space: pre-wrap;
+  font-size: 16px;
+  line-height: 1.35;
 }
 
-.yours { align-items: flex-start; }
+/* Sides */
+.yours { align-items: flex-start; display: flex; flex-direction: column; }
 .yours .message {
   margin-right: 25%;
-  background-color: #EEE;
-  position: relative;
+  background-color: #E5E5EA; color: #000; position: relative;
 }
 .yours .message.last:before {
-  content: "";
-  position: absolute;
-  z-index: 0;
-  bottom: 0; left: -7px;
-  height: 20px; width: 20px;
-  background: #EEE;
-  border-bottom-right-radius: 15px;
+  content: ""; position: absolute; bottom: 0; left: -6px;
+  width: 16px; height: 16px; background: #E5E5EA; border-bottom-right-radius: 12px;
 }
 .yours .message.last:after {
-  content: "";
-  position: absolute;
-  z-index: 1;
-  bottom: 0; left: -10px;
-  width: 10px; height: 20px;
-  background: #fff; /* match .chat bg */
-  border-bottom-right-radius: 10px;
+  content: ""; position: absolute; bottom: 0; left: -10px;
+  width: 10px; height: 16px; background: #fff; border-bottom-right-radius: 10px;
 }
 
-.mine { align-items: flex-end; }
+.mine { align-items: flex-end; display: flex; flex-direction: column; }
 .mine .message {
-  color: #fff;
-  margin-left: 25%;
-  background: rgb(0, 120, 254);
-  position: relative;
+  color: #fff; margin-left: 25%; background: #007AFF; position: relative;
 }
 .mine .message.last:before {
-  content: "";
-  position: absolute;
-  z-index: 0;
-  bottom: 0; right: -8px;
-  height: 20px; width: 20px;
-  background: rgb(0, 120, 254);
-  border-bottom-left-radius: 15px;
+  content: ""; position: absolute; bottom: 0; right: -6px;
+  width: 16px; height: 16px; background: #007AFF; border-bottom-left-radius: 12px;
 }
 .mine .message.last:after {
-  content: "";
-  position: absolute;
-  z-index: 1;
-  bottom: 0; right: -10px;
-  width: 10px; height: 20px;
-  background: #fff; /* match .chat bg */
-  border-bottom-left-radius: 10px;
+  content: ""; position: absolute; bottom: 0; right: -10px;
+  width: 10px; height: 16px; background: #fff; border-bottom-left-radius: 10px;
 }
 
-/* Wider on larger screens */
-@media (min-width: 640px) { .chat { width: 480px; } }
-@media (min-width: 1024px) { .chat { width: 640px; } }
+/* Make sure the rest of the page doesn't move while scrolling in phone */
+.phone-screen,
+.phone-shell,
+.phone-stage {
+  touch-action: pan-y;
+}
+
+/* Responsive: scale phone down slightly on narrow laptops */
+@media (max-height: 860px) {
+  :root { --phone-h: 736px; } /* iPhone 8 Plus height */
+}
+@media (max-width: 420px) {
+  :root { --phone-w: 340px; }
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  width: 100%;
+  overflow: hidden;            /* page itself never scrolls */
+}
+
+.phone-stage {
+  position: fixed;             /* lock to viewport */
+  inset: 0;                    /* top:0 right:0 bottom:0 left:0 */
+  width: auto;                 /* avoid 100vw scrollbar skew */
+  height: auto;                /* avoid 100vh scrollbar skew */
+  display: grid;               /* perfect centering */
+  place-items: center;
+  background: #f2f3f7;
+}
+
+.phone-shell {
+  box-sizing: border-box;      /* include bezel padding in centering math */
+}
+
 </style>
 
-{# ---------- Parse transcript into [{who, text}] without 'continue' ---------- #}
+{# ---------- Setup & parsing ---------- #}
+{% set raw_conv = conversation|default('') %}
+{% set other = other_username|default('Contact') %}
+{% set liked_on_text = liked_on_text|default('') %}
 {% set ns = namespace(msgs=[], pending=None) %}
-{% for raw in conversation.split('\n') %}
+
+{% for raw in raw_conv.split('\n') %}
   {% set line = raw.strip() %}
   {% if line %}
     {% set lp = namespace(handled=False) %}
-
-    {# explicit prefixes: "You: ..." or "<other_username>: ..." #}
     {% if line.startswith('You:') %}
       {% set ns.msgs = ns.msgs + [{'who':'mine','text': line[4:].strip()}] %}
-      {% set ns.pending = None %}
-      {% set lp.handled = True %}
-    {% elif line.startswith(other_username ~ ':') %}
-      {% set ns.msgs = ns.msgs + [{'who':'yours','text': line[other_username|length + 1:].strip()}] %}
-      {% set ns.pending = None %}
-      {% set lp.handled = True %}
+      {% set ns.pending = None %}{% set lp.handled = True %}
+    {% elif line.startswith(other ~ ':') %}
+      {% set ns.msgs = ns.msgs + [{'who':'yours','text': line[other|length + 1:].strip()}] %}
+      {% set ns.pending = None %}{% set lp.handled = True %}
     {% endif %}
-
-    {# standalone markers (adjust if your generator uses different tokens) #}
     {% if not lp.handled %}
       {% if line in ['Y', 'You'] %}
-        {% set ns.pending = 'mine' %}
-        {% set lp.handled = True %}
-      {% elif line in ['C', other_username] %}
-        {% set ns.pending = 'yours' %}
-        {% set lp.handled = True %}
+        {% set ns.pending = 'mine' %}{% set lp.handled = True %}
+      {% elif line in ['C', other] %}
+        {% set ns.pending = 'yours' %}{% set lp.handled = True %}
       {% endif %}
     {% endif %}
-
-    {# regular content: use pending side; default to 'yours' #}
     {% if not lp.handled %}
       {% set ns.msgs = ns.msgs + [{'who': (ns.pending or 'yours'), 'text': line}] %}
       {% set ns.pending = None %}
@@ -127,25 +226,65 @@
   {% endif %}
 {% endfor %}
 
-{# ---------- Render using your exact HTML structure ---------- #}
-<div class="chat-wrap">
-  <div class="chat" id="chat">
-    {% set N = ns.msgs|length %}
-    {% for i in range(N) %}
-      {% set m = ns.msgs[i] %}
-      {% set prev_same = i>0 and ns.msgs[i-1].who == m.who %}
-      {% set next_same = i+1 < N and ns.msgs[i+1].who == m.who %}
+<div class="phone-stage">
+  <div class="phone-shell">
+    <div class="phone-notch" aria-hidden="true"></div>
+    <div class="phone-screen" id="phoneScreen" role="region" aria-label="Chat window">
+      <div class="safe-top"></div>
 
-      {% if not prev_same %}<div class="{{ m.who }} messages">{% endif %}
-        <div class="message {% if not next_same %}last{% endif %}">{{ m.text }}</div>
-      {% if not next_same %}</div>{% endif %}
-    {% endfor %}
+      <div class="chat">
+        <div class="chat-header">
+          <div class="header-top">
+            <div class="avatar">{{ other[:1]|upper }}</div>
+            <div class="title">Chat with {{ other }}</div>
+          </div>
+          <div class="subline">
+            <span class="pill">❤️ It’s a match</span>
+            <span>
+              Your clone liked {{ other }}{% if liked_on_text %} on {{ liked_on_text }}{% endif %}
+            </span>
+          </div>
+        </div>
+
+        <div class="messages">
+          {% set N = ns.msgs|length %}
+          {% for i in range(N) %}
+            {% set m = ns.msgs[i] %}
+            {% set prev_same = i>0 and ns.msgs[i-1].who == m.who %}
+            {% set next_same = i+1 < N and ns.msgs[i+1].who == m.who %}
+
+            {% if not prev_same %}<div class="{{ m.who }}">{% endif %}
+              <div class="message {% if not next_same %}last{% endif %}">{{ m.text }}</div>
+            {% if not next_same %}</div>{% endif %}
+          {% endfor %}
+        </div>
+      </div>
+    </div>
   </div>
 </div>
 
 <script>
-/* Auto-scroll to newest */
-const chat = document.getElementById('chat');
-if (chat) chat.scrollTop = chat.scrollHeight;
+/* Scroll to bottom on load */
+const screenEl = document.getElementById('phoneScreen');
+if (screenEl) {
+  screenEl.scrollTop = screenEl.scrollHeight;
+}
+
+/* Extra guard: prevent wheel events from scrolling the page when over the phone */
+(function(){
+  const el = document.getElementById('phoneScreen');
+  if (!el) return;
+  el.addEventListener('wheel', function(e){
+    // Determine if the element can scroll further in the wheel direction
+    const delta = e.deltaY;
+    const atTop = el.scrollTop === 0;
+    const atBottom = Math.ceil(el.scrollTop + el.clientHeight) >= el.scrollHeight;
+
+    if ((delta < 0 && atTop) || (delta > 0 && atBottom)) {
+      // Stop scroll chaining to body
+      e.preventDefault();
+    }
+  }, { passive: false });
+})();
 </script>
 {% endblock %}
