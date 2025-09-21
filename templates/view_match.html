@@ -206,30 +206,13 @@ html, body {
 {% set raw_conv = conversation|default('') %}
 {% set other = other_username|default('Contact') %}
 {% set liked_on_text = liked_on_text|default('') %}
-{% set ns = namespace(msgs=[], pending=None) %}
-
+{% set ns = namespace(msgs=[], last_who='yours') %}
 {% for raw in raw_conv.split('\n') %}
   {% set line = raw.strip() %}
   {% if line %}
-    {% set lp = namespace(handled=False) %}
-    {% if line.startswith('You:') %}
-      {% set ns.msgs = ns.msgs + [{'who':'mine','text': line[4:].strip()}] %}
-      {% set ns.pending = None %}{% set lp.handled = True %}
-    {% elif line.startswith(other ~ ':') %}
-      {% set ns.msgs = ns.msgs + [{'who':'yours','text': line[other|length + 1:].strip()}] %}
-      {% set ns.pending = None %}{% set lp.handled = True %}
-    {% endif %}
-    {% if not lp.handled %}
-      {% if line in ['Y', 'You'] %}
-        {% set ns.pending = 'mine' %}{% set lp.handled = True %}
-      {% elif line in ['C', other] %}
-        {% set ns.pending = 'yours' %}{% set lp.handled = True %}
-      {% endif %}
-    {% endif %}
-    {% if not lp.handled %}
-      {% set ns.msgs = ns.msgs + [{'who': (ns.pending or 'yours'), 'text': line}] %}
-      {% set ns.pending = None %}
-    {% endif %}
+    {% set who = 'mine' if ns.last_who == 'yours' else 'yours' %}
+    {% set ns.msgs = ns.msgs + [{'who': who, 'text': line}] %}
+    {% set ns.last_who = who %}
   {% endif %}
 {% endfor %}
 

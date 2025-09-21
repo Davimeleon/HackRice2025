@@ -233,7 +233,7 @@ def date_clones():
     conn = sqlite3.connect('users.db')
     cursor = conn.cursor()
     cursor.execute('''
-        SELECT c.id, u.username, c.answers_json, c.persona, c.profile_pic_path 
+        SELECT c.id, u.username, c.answers_json, c.persona, c.profile_pic_path, c.name 
         FROM clones c 
         JOIN users u ON c.user_id = u.id 
         WHERE c.user_id != ?
@@ -241,7 +241,7 @@ def date_clones():
     other_clones = cursor.fetchall()
     
     # Fetch user's clone
-    cursor.execute('SELECT answers_json, persona FROM clones WHERE user_id = ?', (session['user_id'],))
+    cursor.execute('SELECT answers_json, persona, name FROM clones WHERE user_id = ?', (session['user_id'],))
     user_clone = cursor.fetchone()
     conn.close()
     
@@ -257,16 +257,17 @@ def date_clones():
     selected_clones = random.sample(other_clones, min(5, len(other_clones))) if other_clones else []
     
     clones_with_scores = []
-    for clone_id, username, answers_json, other_persona, profile_pic_path in selected_clones:
+    for clone_id, username, answers_json, other_persona, profile_pic_path, name in selected_clones:
         other_answers = json.loads(answers_json)
         score = calculate_compatibility(user_answers, other_answers)  # LLM-based score
         clones_with_scores.append({
             'id': clone_id,
             'username': username,
             'score': score,
-            'profile_pic': profile_pic_path or '/static/default_profile.png'  # Fallback if none
+            'profile_pic': profile_pic_path or '/static/default_profile.png',
+            'name': name or 'No Name'
         })
-    
+            
     return render_template('date_clones.html', clones=clones_with_scores)
 
 @app.route('/view_match/<int:clone_id>')
@@ -277,29 +278,41 @@ def view_match(clone_id):
     # Fetch clones including personas
     conn = sqlite3.connect('users.db')
     cursor = conn.cursor()
-    cursor.execute('SELECT answers_json, persona FROM clones WHERE user_id = ?', (session['user_id'],))
+    cursor.execute('SELECT answers_json, persona, name FROM clones WHERE user_id = ?', (session['user_id'],))
     user_clone = cursor.fetchone()
     
-    cursor.execute('SELECT answers_json, persona FROM clones WHERE id = ?', (clone_id,))
+    cursor.execute('SELECT answers_json, persona, name FROM clones WHERE id = ?', (clone_id,))
     other_clone = cursor.fetchone()
     
     # Fetch other username
-    cursor.execute('SELECT u.username FROM clones c JOIN users u ON c.user_id = u.id WHERE c.id = ?', (clone_id,))
-    other_username = cursor.fetchone()[0]
+    cursor.execute('SELECT name FROM clones WHERE id = ?', (clone_id,))
+    other_username = cursor.fetchone()[0] or 'Contact'
     conn.close()
     
     if not user_clone or not other_clone:
         flash('Clone not found.', 'error')
         return redirect(url_for('date_clones'))
     
-    user_answers, user_persona, user_name = json.loads(user_clone[0]), user_clone[1], user_clone[2]
-    other_answers, other_persona, other_name = json.loads(other_clone[0]), other_clone[1], other_clone[2]
+    user_answers, user_persona, user_name = json.loads(user_clone[0]), user_clone[1], user_clone[2] if user_clone[2] is not None else 'No_Name'
+    other_answers, other_persona, other_name = json.loads(other_clone[0]), other_clone[1], other_clone[2] if other_clone[2] is not None else 'No_Name'
     
     # Generate sample conversation using personas
     conversation = generate_conversation(user_answers, user_persona, other_answers, other_persona, user_name, other_name)
     
-    # Replace 'Other:' with '{other_username}:'
-    conversation = conversation.replace('Other:', f'{other_username}:')
+    # Remove name prefixes (You: and other_name:) from conversation
+    lines = conversation.split('\n')
+    cleaned_lines = []
+    for line in lines:
+        line = line.strip()
+        if line.startswith('You:'):
+            cleaned_lines.append(line[4:].strip())
+        elif line.startswith(f'{other_name}:'):
+            cleaned_lines.append(line[len(other_name)+1:].strip())
+        elif line.startswith(f'{user_name}:'):
+            cleaned_lines.append(line[len(user_name)+1:].strip())
+        elif line:
+            cleaned_lines.append(line)
+    conversation = '\n'.join(cleaned_lines)
     
     return render_template('view_match.html', conversation=conversation, other_username=other_username)
 
