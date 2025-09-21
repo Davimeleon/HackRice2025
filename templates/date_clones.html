@@ -1,50 +1,147 @@
 {% block content %}
-<h2>Other Clones</h2>
-{% if clones %}
-<div class="carousel-container">
-    <div class="carousel-slide" id="carousel-slide">
-        {% for clone in clones %}
-        <div class="carousel-item">
-            <div class="profile-rectangle">
-                <img src="{{ clone.profile_pic }}" alt="Profile Picture" class="profile-pic">
-                <h3>{{ clone.username }}</h3>
-                <div class="compatibility-score">{{ clone.score }}%</div>
-                <a href="{{ url_for('view_match', clone_id=clone.id) }}" class="clone-button">Look at Conversation</a>
+<style>
+:root{
+  --phone-w:375px;--phone-h:812px;--radius:44px;
+  --ink:#111;--muted:#6b7280;--line:#E5E5EA;--blue:#007AFF;
+}
+html,body{margin:0;padding:0;height:100%;width:100%;overflow:hidden;background:#f2f3f7;font-family:"SF Pro Text",-apple-system,BlinkMacSystemFont,"Helvetica Neue",Arial,sans-serif;color:var(--ink)}
+.phone-stage{position:fixed;inset:0;display:grid;place-items:center;background:#f2f3f7}
+.phone-shell{position:relative;width:calc(var(--phone-w) + 24px);height:calc(var(--phone-h) + 24px);box-sizing:border-box;padding:12px;border-radius:calc(var(--radius) + 8px);background:linear-gradient(180deg,#0b0c10,#1b1c22);box-shadow:0 20px 60px rgba(0,0,0,.35),0 6px 18px rgba(0,0,0,.2) inset,0 0 0 2px #15161b inset}
+.phone-notch{position:absolute;top:8px;left:50%;transform:translateX(-50%);width:210px;height:28px;background:#0f1015;border-bottom-left-radius:18px;border-bottom-right-radius:18px}
+.phone-screen{position:relative;width:var(--phone-w);height:var(--phone-h);border-radius:var(--radius);background:#fff;overflow:hidden;box-shadow:0 0 0 1px #e5e7eb inset}
+.scroll{position:absolute;inset:0;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
+
+/* Header shared vibe with view_match */
+.header{position:sticky;top:0;z-index:10;padding:10px 12px 8px;background:linear-gradient(180deg,#ffffff,#ffffffcc 85%,#ffffffcc);backdrop-filter:saturate(180%) blur(12px);-webkit-backdrop-filter:saturate(180%) blur(12px);border-bottom:1px solid var(--line)}
+.nav{display:grid;grid-template-columns:1fr auto 1fr;align-items:center}
+.back{justify-self:start;display:inline-flex;align-items:center;gap:6px;padding:4px 6px;border-radius:8px;color:var(--blue);font-weight:600;text-decoration:none}
+.back::before{content:"‹";font-size:20px;line-height:1}
+.back:hover{text-decoration:underline}
+.titlegroup{justify-self:center;display:inline-flex;flex-direction:column;align-items:center}
+.h1{font-weight:800;letter-spacing:-.01em}
+.sub{font-size:12.5px;color:var(--muted)}
+.mirror{visibility:hidden;justify-self:end}
+
+/* Carousel */
+.wrap{padding:14px 0 90px;background:hsl(0, 0%, 100%)}
+.carousel-container{position:relative}
+.track{display:grid;grid-auto-flow:column;grid-auto-columns:100%;transition:transform .35s ease;will-change:transform}
+.slide{display:flex;align-items:center;justify-content:center;padding:14px}
+.card{width:88%;max-width:300px;border-radius:24px;background:linear-gradient(180deg,#ffffff,#fafafa);border:1px solid #eef0f3;box-shadow:0 10px 30px rgba(0,0,0,.06);padding:16px 16px 18px;display:flex;flex-direction:column;gap:10px}
+.banner{position:relative;border-radius:18px;overflow:hidden;aspect-ratio:1/1;background:#f3f4f6;display:grid;place-items:center}
+.profile-pic{width:100%;height:100%;object-fit:cover;display:block}
+.name-row{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.name{font-size:18px;font-weight:700}
+.score{font-size:12.5px;border:1px solid #ffd6e8;background:#fff0f5;color:#d946ef;padding:4px 10px;border-radius:999px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;margin-top:6px;padding:11px 14px;border-radius:14px;border:1px solid var(--blue);background:var(--blue);color:#fff;font-weight:700;text-decoration:none}
+.btn:active{transform:translateY(1px)}
+.meta{display:flex;gap:8px;align-items:center;color:#6b7280;font-size:12px}
+.meta .dot{width:6px;height:6px;border-radius:999px;background:#16a34a}
+
+/* Arrows */
+.carousel-button{position:absolute;top:50%;transform:translateY(-50%);border:0;background:#ffffffdd;border:1px solid #e5e7eb;width:36px;height:36px;border-radius:999px;display:grid;place-items:center;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.08)}
+.carousel-button:active{transform:translateY(-50%) scale(.98)}
+.prev{left:10px}
+.next{right:10px}
+
+/* Home indicator */
+.home-indicator{position:sticky;bottom:4px;width:134px;height:5px;background:#0f101522;border-radius:999px;margin:10px auto}
+
+@media (max-height:860px){:root{--phone-h:736px}}
+@media (max-width:420px){:root{--phone-w:340px}}
+</style>
+
+<div class="phone-stage">
+  <div class="phone-shell">
+    <div class="phone-notch" aria-hidden="true"></div>
+    <div class="phone-screen" role="region" aria-label="Matches">
+      <div class="scroll">
+        <header class="header">
+          <div class="nav">
+            <a href="/home" class="back">Back</a>
+            <div class="titlegroup">
+              <div class="h1">Matches</div>
+              <div class="sub">Your clone’s top picks</div>
             </div>
-        </div>
-        {% endfor %}
+            <span class="mirror back">Back</span>
+          </div>
+        </header>
+
+        {% if clones %}
+        <section class="wrap">
+          <div class="carousel-container">
+            <div class="track" id="carousel-track">
+              {% for clone in clones %}
+              <div class="slide">
+                <article class="card">
+                  <div class="banner">
+                    <img src="{{ clone.profile_pic }}" alt="{{ clone.username }}" class="profile-pic" loading="lazy" />
+                  </div>
+                  <div class="name-row">
+                    <div class="name">{{ clone.username }}</div>
+                    <div class="score">{{ clone.score }}% match</div>
+                  </div>
+                  <div class="meta"><span class="dot" aria-hidden="true"></span> Active recently</div>
+                  <a href="{{ url_for('view_match', clone_id=clone.id) }}" class="btn">Open Conversation</a>
+                </article>
+              </div>
+              {% endfor %}
+            </div>
+            <button class="carousel-button prev" type="button" aria-label="Previous" onclick="moveSlide(-1)">‹</button>
+            <button class="carousel-button next" type="button" aria-label="Next" onclick="moveSlide(1)">›</button>
+          </div>
+        </section>
+        {% else %}
+          <section class="wrap" style="padding-top:28px">
+            <div style="text-align:center;color:#6b7280">No other clones available yet.</div>
+          </section>
+        {% endif %}
+
+        <div class="home-indicator" aria-hidden="true"></div>
+      </div>
     </div>
-    <button class="carousel-button prev" onclick="moveSlide(-1)">&lt;</button>
-    <button class="carousel-button next" onclick="moveSlide(1)">&gt;</button>
+  </div>
 </div>
+
 <script>
-    let currentIndex = 0;
-    const slide = document.getElementById('carousel-slide');
-    const items = document.querySelectorAll('.carousel-item');
-    const totalItems = items.length;
+(function(){
+  const track = document.getElementById('carousel-track');
+  if(!track) return;
+  const slides = track.children;
+  const total = slides.length;
+  let idx = 0;
 
-    function moveSlide(direction) {
-        currentIndex = (currentIndex + direction + totalItems) % totalItems;
-        slide.style.transform = `translateX(-${currentIndex * 100}%)`;
-    }
+  window.moveSlide = function(dir){
+    idx = (idx + dir + total) % total;
+    track.style.transform = `translateX(-${idx*100}%)`;
+  }
 
-    // Add swipe support
-    let touchStartX = 0;
-    let touchEndX = 0;
-    const container = document.querySelector('.carousel-container');
-    container.addEventListener('touchstart', e => {
-        touchStartX = e.changedTouches[0].screenX;
-    });
-    container.addEventListener('touchend', e => {
-        touchEndX = e.changedTouches[0].screenX;
-        if (touchStartX - touchEndX > 50) {
-            moveSlide(1);  // Swipe left -> next
-        } else if (touchEndX - touchStartX > 50) {
-            moveSlide(-1);  // Swipe right -> prev
-        }
-    });
+  // Touch swipe
+  let startX = 0, endX = 0, touching = false;
+  track.addEventListener('touchstart', e=>{ touching = true; startX = e.changedTouches[0].screenX; });
+  track.addEventListener('touchend', e=>{
+    if(!touching) return; touching = false; endX = e.changedTouches[0].screenX;
+    const dx = endX - startX;
+    if (Math.abs(dx) > 40){ window.moveSlide(dx<0? 1 : -1); }
+  });
+
+  // Keyboard arrows (for desktop testing)
+  window.addEventListener('keydown', e=>{
+    if(e.key==='ArrowRight') moveSlide(1);
+    if(e.key==='ArrowLeft') moveSlide(-1);
+  });
+})();
+
+// prevent scroll bounce at edges
+(function(){
+  const el = document.querySelector('.scroll');
+  if(!el) return;
+  el.addEventListener('wheel', function(e){
+    const d = e.deltaY;
+    const atTop = el.scrollTop === 0;
+    const atBottom = Math.ceil(el.scrollTop + el.clientHeight) >= el.scrollHeight;
+    if ((d < 0 && atTop) || (d > 0 && atBottom)) e.preventDefault();
+  }, { passive:false });
+})();
 </script>
-{% else %}
-<p>No other clones available yet.</p>
-{% endif %}
 {% endblock %}
