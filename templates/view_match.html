@@ -1,28 +1,29 @@
 {% block content %}
 <style>
-/* Page baseline (page itself doesn't scroll because the phone viewport captures it) */
 :root {
-  --phone-w: 375px;    /* iPhone base width */
-  --phone-h: 812px;    /* iPhone 11/12-ish height */
-  --radius: 44px;      /* large to feel like a device */
+  --phone-w: 375px;
+  --phone-h: 812px;
+  --radius: 44px;
 }
 
-
-body {
-    
+/* Base page */
+html, body {
   margin: 0;
+  padding: 0;
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
   background: #f2f3f7;
   font-family: "SF Pro Text", -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
 }
 
+/* Stage centers phone perfectly */
 .phone-stage {
-  width: 100vw;
-  height: 100vh;
-  display: flex;
-  align-items: center;   /* vertical center */
-  justify-content: center; /* horizontal center */
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
   background: #f2f3f7;
-  overflow: hidden; /* stops body scrollbars if phone is tall */
 }
 
 /* Device shell */
@@ -30,16 +31,17 @@ body {
   position: relative;
   width: calc(var(--phone-w) + 24px);
   height: calc(var(--phone-h) + 24px);
+  box-sizing: border-box;
+  padding: 12px;
   border-radius: calc(var(--radius) + 8px);
   background: linear-gradient(180deg, #0b0c10, #1b1c22);
   box-shadow:
     0 20px 60px rgba(0,0,0,0.35),
     0 6px 18px rgba(0,0,0,0.2) inset,
     0 0 0 2px #15161b inset;
-  padding: 12px; /* bezel thickness */
 }
 
-/* Notch (simple) */
+/* Notch */
 .phone-notch {
   position: absolute;
   top: 8px; left: 50%;
@@ -50,25 +52,22 @@ body {
   border-bottom-right-radius: 18px;
 }
 
-/* Screen = the only scrollable area */
+/* Phone screen */
 .phone-screen {
   position: relative;
   width: var(--phone-w);
   height: var(--phone-h);
   border-radius: var(--radius);
   background: #ffffff;
-  overflow-y: auto;              /* scroll inside only */
-  overscroll-behavior: contain;  /* stop scroll chaining to body */
-  -webkit-overflow-scrolling: touch; /* iOS momentum */
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
   box-shadow: 0 0 0 1px #e5e7eb inset;
 }
 
-/* Fake iOS safe-area top spacer (under notch) */
-.safe-top {
-  height: 10px;
-}
+.safe-top { height: 10px; }
 
-/* Chat card fills screen (no page scroll) */
+/* Chat container */
 .chat {
   min-height: calc(var(--phone-h) - 10px);
   display: flex;
@@ -76,33 +75,79 @@ body {
   background: #fff;
 }
 
-/* Sticky header (banner) inside the phone */
+/* Sticky header */
 .chat-header {
-  position: sticky; top: 0;
-  z-index: 10;
-  display: flex; flex-direction: column; gap: 8px;
-  padding: 16px 18px 12px;
-  background: #ffffffcc; /* a bit translucent for depth */
+  position: sticky; top: 0; z-index: 10;
+  display: flex; flex-direction: column; gap: 6px;
+  padding: 10px 12px;
+  background: linear-gradient(180deg, #ffffff, #ffffffcc 85%, #ffffffcc);
   -webkit-backdrop-filter: saturate(180%) blur(12px);
   backdrop-filter: saturate(180%) blur(12px);
   border-bottom: 1px solid #E5E5EA;
 }
 
-.header-top { display: flex; align-items: center; gap: 12px; }
+/* Nav row: three columns — left back button, centered avatar+title, right invisible mirror */
+.nav {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr; /* balance with mirror on right */
+  align-items: center;
+}
 
-.avatar {
-  width: 40px; height: 40px; border-radius: 50%;
+/* Back button */
+.back-button {
+  justify-self: start;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 6px;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  color: #007AFF;
+  text-decoration: none;
+}
+.back-button::before { content: "‹"; font-size: 20px; line-height: 1; }
+.back-button:hover { text-decoration: underline; }
+.back-button:active { background: rgba(0,122,255,0.08); }
+
+/* Center group (truly centered) */
+.center-group {
+  justify-self: center;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.nav-avatar {
+  width: 34px; height: 34px;
+  border-radius: 50%;
   background: #E5E5EA; color: #111;
   display: inline-flex; align-items: center; justify-content: center;
-  font-weight: 600; font-size: 18px;
+  font-weight: 600; font-size: 15px;
 }
-.title {
-  font-size: 20px; font-weight: 700; letter-spacing: -0.01em; color: #111;
+.nav-title {
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: #111;
 }
 
+/* Invisible mirror of back button to balance widths */
+.back-mirror {
+  justify-self: end;
+  visibility: hidden;      /* occupies space, not visible */
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 6px;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+/* Subline under nav */
 .subline {
   font-size: 14px; color: #6b7280;
   display: flex; align-items: center; gap: 8px;
+  justify-content: center;
 }
 .pill {
   display: inline-flex; align-items: center; gap: 6px;
@@ -110,13 +155,9 @@ body {
   background: #fff0f5; color: #d946ef; border: 1px solid #ffd6e8;
 }
 
-/* Messages area */
-.messages {
-  padding: 14px 16px 26px; /* extra bottom pad for comfort */
-  display: flex; flex-direction: column;
-}
+/* Messages */
+.messages { padding: 14px 16px 26px; display: flex; flex-direction: column; }
 
-/* Bubble base */
 .message {
   border-radius: 22px;
   padding: 12px 16px;
@@ -128,7 +169,6 @@ body {
   line-height: 1.35;
 }
 
-/* Sides */
 .yours { align-items: flex-start; display: flex; flex-direction: column; }
 .yours .message {
   margin-right: 25%;
@@ -156,43 +196,10 @@ body {
   width: 10px; height: 16px; background: #fff; border-bottom-left-radius: 10px;
 }
 
-/* Make sure the rest of the page doesn't move while scrolling in phone */
-.phone-screen,
-.phone-shell,
-.phone-stage {
-  touch-action: pan-y;
-}
+.phone-screen, .phone-shell, .phone-stage { touch-action: pan-y; }
 
-/* Responsive: scale phone down slightly on narrow laptops */
-@media (max-height: 860px) {
-  :root { --phone-h: 736px; } /* iPhone 8 Plus height */
-}
-@media (max-width: 420px) {
-  :root { --phone-w: 340px; }
-}
-
-html, body {
-  margin: 0;
-  padding: 0;
-  height: 100%;
-  width: 100%;
-  overflow: hidden;            /* page itself never scrolls */
-}
-
-.phone-stage {
-  position: fixed;             /* lock to viewport */
-  inset: 0;                    /* top:0 right:0 bottom:0 left:0 */
-  width: auto;                 /* avoid 100vw scrollbar skew */
-  height: auto;                /* avoid 100vh scrollbar skew */
-  display: grid;               /* perfect centering */
-  place-items: center;
-  background: #f2f3f7;
-}
-
-.phone-shell {
-  box-sizing: border-box;      /* include bezel padding in centering math */
-}
-
+@media (max-height: 860px) { :root { --phone-h: 736px; } }
+@media (max-width: 420px)  { :root { --phone-w: 340px; } }
 </style>
 
 {# ---------- Setup & parsing ---------- #}
@@ -234,10 +241,23 @@ html, body {
 
       <div class="chat">
         <div class="chat-header">
-          <div class="header-top">
-            <div class="avatar">{{ other[:1]|upper }}</div>
-            <div class="title">Chat with {{ other }}</div>
+          <div class="nav">
+            <!-- Left: back button -->
+            <a href="/date_clones" class="back-button"
+               onclick="if(this.getAttribute('href')==='#'){ history.back(); return false; }">
+              Matches
+            </a>
+
+            <!-- Center: avatar + title (truly centered) -->
+            <div class="center-group">
+              <div class="nav-avatar">{{ other[:1]|upper }}</div>
+              <div class="nav-title">Chat with {{ other }}</div>
+            </div>
+
+            <!-- Right: invisible mirror of the back button to balance widths -->
+            <span class="back-mirror">Matches</span>
           </div>
+
           <div class="subline">
             <span class="pill">❤️ It’s a match</span>
             <span>
@@ -266,24 +286,17 @@ html, body {
 <script>
 /* Scroll to bottom on load */
 const screenEl = document.getElementById('phoneScreen');
-if (screenEl) {
-  screenEl.scrollTop = screenEl.scrollHeight;
-}
+if (screenEl) screenEl.scrollTop = screenEl.scrollHeight;
 
-/* Extra guard: prevent wheel events from scrolling the page when over the phone */
+/* Prevent wheel scroll bleed at edges */
 (function(){
   const el = document.getElementById('phoneScreen');
   if (!el) return;
   el.addEventListener('wheel', function(e){
-    // Determine if the element can scroll further in the wheel direction
     const delta = e.deltaY;
     const atTop = el.scrollTop === 0;
     const atBottom = Math.ceil(el.scrollTop + el.clientHeight) >= el.scrollHeight;
-
-    if ((delta < 0 && atTop) || (delta > 0 && atBottom)) {
-      // Stop scroll chaining to body
-      e.preventDefault();
-    }
+    if ((delta < 0 && atTop) || (delta > 0 && atBottom)) e.preventDefault();
   }, { passive: false });
 })();
 </script>
