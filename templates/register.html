@@ -2,6 +2,10 @@
 {% block title %}Register{% endblock %}
 {% block content %}
 <div class="form-container">
+
+    <!-- Add this line to display your logo -->
+    <img src="{{ url_for('static', filename='CloneMe-export.gif') }}" alt="CloneMe Logo" style="display: block; margin: 0 auto 20px auto; max-width: 80%;">
+
     <h2>Join {{ app_name }}</h2>
     <form method="POST">
         {{ form.hidden_tag() }}
