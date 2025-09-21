@@ -98,6 +98,7 @@ def home():
     conn.close()
     has_clone = clone is not None
     profile_pic_path = clone[1] if clone and clone[1] else '/static/robot.png'
+    print(f'Database profile_pic_path: {clone[1] if clone else None}')  # Debug
     # Normalize path and check existence
     if profile_pic_path and profile_pic_path != '/static/robot.png':
         profile_pic_path = profile_pic_path.replace('Uploads', 'uploads')
@@ -123,8 +124,15 @@ def create_clone():
     existing_clone = cursor.fetchone()
     conn.close()
     pre_filled_answers = json.loads(existing_clone[0]) if existing_clone else {}
-    pre_filled_name = existing_clone[1] if existing_clone and len(existing_clone) > 1 else 'No_Name'
+    pre_filled_name = existing_clone[1] if existing_clone and len(existing_clone) > 1 else ''
     
+    print(f'Pre-filled name from database: {pre_filled_name}')  # Debug
+    if request.method == 'GET' and not form.name.data:  # Only pre-fill on GET
+        form.name.data = pre_filled_name
+    for q in DEFAULT_QUESTIONS:
+        if q['id'] in pre_filled_answers:
+            setattr(form, q['id'], pre_filled_answers[q['id']])
+
     if form.validate_on_submit():
         try:
             # Collect answers, handling skips
@@ -144,12 +152,15 @@ def create_clone():
             if profile_pic_file and allowed_file(profile_pic_file.filename):
                 filename = secure_filename(profile_pic_file.filename)
                 temp_path = os.path.join(app.config['UPLOAD_FOLDER'], f"temp_{filename}")
+                print(f'Saving temp file: {temp_path}')  # Debug
                 profile_pic_file.save(temp_path)
             
                 # Generate composite image
                 try:
                     # Load images
+                    print(f'Opening user image: {temp_path}')  # Debug
                     user_img = Image.open(temp_path).convert('RGBA')
+                    print(f'Opening robot image: static/robot.png')  # Debug
                     robot_img = Image.open(os.path.join('static', 'robot.png')).convert('RGBA')
                     
                     # Resize user image to fit robot head (adjust size as needed)
@@ -165,15 +176,20 @@ def create_clone():
                     
                     # Save composite image
                     profile_pic_path = os.path.join(app.config['UPLOAD_FOLDER'], f"composite_{filename}")
+                    absolute_path = os.path.join(app.root_path, profile_pic_path)
+                    print(f'Saving composite image: {absolute_path}')  # Debug
                     composite_img.save(profile_pic_path, 'PNG')
                     print(f'Saved composite image: {absolute_path}')  # Debug
                     
                     # Clean up temporary file
+                    print(f'Removing temp file: {temp_path}')  # Debug
                     os.remove(temp_path)
                 except Exception as e:
                     flash(f'Error processing profile picture: {str(e)}', 'error')
                     print(f'Image processing error: {str(e)}')
                     profile_pic_path = None
+            
+            print(f'Final profile_pic_path: {profile_pic_path}')  # Debug
 
             # Generate persona using LLM
             try:
