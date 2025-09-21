@@ -120,15 +120,16 @@ def create_clone():
     # Check if user has existing clone and pre-fill answers
     conn = sqlite3.connect('users.db')
     cursor = conn.cursor()
-    cursor.execute('SELECT answers_json FROM clones WHERE user_id = ?', (session['user_id'],))
+    cursor.execute('SELECT answers_json, name FROM clones WHERE user_id = ?', (session['user_id'],))
     existing_clone = cursor.fetchone()
     conn.close()
     pre_filled_answers = json.loads(existing_clone[0]) if existing_clone else {}
-    pre_filled_name = existing_clone[1] if existing_clone and len(existing_clone) > 1 else ''
+    pre_filled_name = existing_clone[1] if existing_clone and existing_clone[1] is not None else ''
     
     print(f'Pre-filled name from database: {pre_filled_name}')  # Debug
-    if request.method == 'GET' and not form.name.data:  # Only pre-fill on GET
+    if request.method == 'GET':
         form.name.data = pre_filled_name
+        print(f'Set form.name.data to: {form.name.data}')  # Debug
     for q in DEFAULT_QUESTIONS:
         if q['id'] in pre_filled_answers:
             setattr(form, q['id'], pre_filled_answers[q['id']])
