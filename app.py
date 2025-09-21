@@ -11,6 +11,7 @@ from forms import RegistrationForm, LoginForm, CloneCreationForm
 from models import init_db, User, Clone, Question, Answer
 from llm import generate_conversation, calculate_compatibility, generate_persona 
 import google.generativeai as genai
+from PIL import Image
 
 # Import from other modules
 from models import init_db, User, Clone, Question, Answer  # Database models
@@ -84,15 +85,28 @@ def login():
     return render_template('login.html', form=form)
 
 @app.route('/home')
+@app.route('/home')
 def home():
     if 'user_id' not in session:
         return redirect(url_for('login'))
     conn = sqlite3.connect('users.db')
     cursor = conn.cursor()
-    cursor.execute('SELECT id FROM clones WHERE user_id = ?', (session['user_id'],))
-    has_clone = cursor.fetchone() is not None
+    cursor.execute('SELECT id, profile_pic_path FROM clones WHERE user_id = ?', (session['user_id'],))
+    clone = cursor.fetchone()
+    cursor.execute('SELECT username FROM users WHERE id = ?', (session['user_id'],))
+    username = cursor.fetchone()[0]
     conn.close()
-    return render_template('home.html', has_clone=has_clone)
+    has_clone = clone is not None
+    profile_pic_path = clone[1] if clone and clone[1] else '/static/robot.png'
+    # Normalize path and check existence
+    if profile_pic_path and profile_pic_path != '/static/robot.png':
+        profile_pic_path = profile_pic_path.replace('Uploads', 'uploads')
+        absolute_path = os.path.join(app.root_path, profile_pic_path.lstrip('/'))
+        if not os.path.exists(absolute_path):
+            print(f'Image not found: {absolute_path}, using fallback')
+            profile_pic_path = '/static/robot.png'
+    print(f'Profile pic path: {profile_pic_path}')  # Debug
+    return render_template('home.html', has_clone=has_clone, username=username, profile_pic_path=profile_pic_path)
 
 @app.route('/create_clone', methods=['GET', 'POST'])
 def create_clone():
@@ -100,6 +114,7 @@ def create_clone():
         return redirect(url_for('login'))
     
     form = CloneCreationForm()
+    form.questions = DEFAULT_QUESTIONS  # Attach questions for template rendering
 
     # Check if user has existing clone and pre-fill answers
     conn = sqlite3.connect('users.db')
@@ -108,61 +123,89 @@ def create_clone():
     existing_clone = cursor.fetchone()
     conn.close()
     pre_filled_answers = json.loads(existing_clone[0]) if existing_clone else {}
-
-    form.questions = DEFAULT_QUESTIONS  # Attach questions for template rendering
+    pre_filled_name = existing_clone[1] if existing_clone and len(existing_clone) > 1 else 'No_Name'
     
     if form.validate_on_submit():
-        # Collect answers, handling skips
-        answers = {q['id']: request.form.get(q['id']) or None for q in DEFAULT_QUESTIONS}
-        
-        # Handle text file upload
-        text_file = form.text_file.data  # Changed from csv_file
-        text_path = None
-        if text_file and allowed_file(text_file.filename):
-            filename = secure_filename(text_file.filename)
-            text_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-            text_file.save(text_path)
-        
-        # Handle profile picture upload
-        profile_pic_file = form.profile_pic.data
-        profile_pic_path = None
-        if profile_pic_file and allowed_file(profile_pic_file.filename):
-            filename = secure_filename(profile_pic_file.filename)
-            profile_pic_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-            profile_pic_file.save(profile_pic_path)
-
-        # Generate persona using LLM
-        persona = generate_persona(answers, text_path)
-        
-        # Generate sample conversation (simplified; uses personas if available, but for initial clone, use basic prompt)
-        conversation_prompt = "Simulate a sample conversation for a new dating clone based on their profile."
         try:
-            model = genai.GenerativeModel('gemini-1.5-flash')
-            llm_response = model.generate_content(conversation_prompt).text
-        except Exception as e:
-            flash(f'Error generating LLM conversation: {str(e)}', 'error')
-            llm_response = "Unable to generate conversation due to API error."
-        
-        print("Generated Persona:")
-        print(persona)
-        print("\nSample Conversation:")
-        print(llm_response)
+            # Collect answers, handling skips
+            answers = {q['id']: request.form.get(q['id']) or None for q in DEFAULT_QUESTIONS}
+            
+            # Handle text file upload
+            text_file = form.text_file.data  # Changed from csv_file
+            text_path = None
+            if text_file and allowed_file(text_file.filename):
+                filename = secure_filename(text_file.filename)
+                text_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+                text_file.save(text_path)
+            
+            # Handle profile picture upload and composite with robot
+            profile_pic_file = form.profile_pic.data
+            profile_pic_path = None
+            if profile_pic_file and allowed_file(profile_pic_file.filename):
+                filename = secure_filename(profile_pic_file.filename)
+                temp_path = os.path.join(app.config['UPLOAD_FOLDER'], f"temp_{filename}")
+                profile_pic_file.save(temp_path)
+            
+                # Generate composite image
+                try:
+                    # Load images
+                    user_img = Image.open(temp_path).convert('RGBA')
+                    robot_img = Image.open(os.path.join('static', 'robot.png')).convert('RGBA')
+                    
+                    # Resize user image to fit robot head (adjust size as needed)
+                    head_size = (202, 167)  # Example size; adjust based on robot.png
+                    user_img = user_img.resize(head_size, Image.Resampling.LANCZOS)
+                    
+                    # Define position for head (adjust x, y coordinates based on robot.png)
+                    head_position = (187, 96)  # Example: top-left corner of head area
+                    
+                    # Create composite image
+                    composite_img = robot_img.copy()
+                    composite_img.paste(user_img, head_position, user_img)  # Use alpha channel for transparency
+                    
+                    # Save composite image
+                    profile_pic_path = os.path.join(app.config['UPLOAD_FOLDER'], f"composite_{filename}")
+                    composite_img.save(profile_pic_path, 'PNG')
+                    print(f'Saved composite image: {absolute_path}')  # Debug
+                    
+                    # Clean up temporary file
+                    os.remove(temp_path)
+                except Exception as e:
+                    flash(f'Error processing profile picture: {str(e)}', 'error')
+                    print(f'Image processing error: {str(e)}')
+                    profile_pic_path = None
 
-        # Save to database
-        conn = sqlite3.connect('users.db')
-        cursor = conn.cursor()
-        cursor.execute('''
-            INSERT INTO clones (user_id, answers_json, text_path, llm_conversation, persona, profile_pic_path)
-            VALUES (?, ?, ?, ?, ?, ?)
-        ''', (session['user_id'], json.dumps(answers), text_path, llm_response, persona, profile_pic_path))
-        
-        conn.commit()
-        conn.close()
-        
-        flash('Clone created successfully!', 'success')
-        return redirect(url_for('home'))
-    
-    return render_template('create_clone.html', form=form, pre_filled_answers=pre_filled_answers)
+            # Generate persona using LLM
+            try:
+                persona = generate_persona(answers, text_path)
+            except Exception as e:
+                flash(f'Error generating persona: {str(e)}', 'error')
+                persona = "Unable to generate persona due to API error."
+            
+            print("Generated Persona:")
+            print(persona)
+
+            # Save to database
+            conn = sqlite3.connect('users.db')
+            cursor = conn.cursor()
+            # Delete existing clone if restarting
+            cursor.execute('DELETE FROM clones WHERE user_id = ?', (session['user_id'],))
+            cursor.execute('''
+                INSERT INTO clones (user_id, answers_json, text_path, persona, profile_pic_path, name)
+                VALUES (?, ?, ?, ?, ?, ?)
+            ''', (session['user_id'], json.dumps(answers), text_path, persona, profile_pic_path, form.name.data))
+            conn.commit()
+            conn.close()
+            
+            flash('Clone created successfully!', 'success')
+            return redirect(url_for('home'))
+        except Exception as e:
+            flash(f'Error creating clone: {str(e)}', 'error')
+            print(f'Error in create_clone: {str(e)}')  # Debug to terminal
+    else:
+        print(f'Form validation failed: {form.errors}')  # Debug validation errors
+
+    return render_template('create_clone.html', form=form, pre_filled_answers=pre_filled_answers, pre_filled_name=pre_filled_name)
 
 @app.route('/date_clones')
 def date_clones():
@@ -232,11 +275,11 @@ def view_match(clone_id):
         flash('Clone not found.', 'error')
         return redirect(url_for('date_clones'))
     
-    user_answers, user_persona = json.loads(user_clone[0]), user_clone[1]
-    other_answers, other_persona = json.loads(other_clone[0]), other_clone[1]
+    user_answers, user_persona, user_name = json.loads(user_clone[0]), user_clone[1], user_clone[2]
+    other_answers, other_persona, other_name = json.loads(other_clone[0]), other_clone[1], other_clone[2]
     
     # Generate sample conversation using personas
-    conversation = generate_conversation(user_answers, user_persona, other_answers, other_persona)
+    conversation = generate_conversation(user_answers, user_persona, other_answers, other_persona, user_name, other_name)
     
     # Replace 'Other:' with '{other_username}:'
     conversation = conversation.replace('Other:', f'{other_username}:')
@@ -248,6 +291,10 @@ def logout():
     session.clear()
     flash('Logged out successfully.', 'success')
     return redirect(url_for('login'))
+
+@app.route('/uploads/<path:filename>')
+def serve_uploaded_file(filename):
+    return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
 
 if __name__ == '__main__':
     app.run(debug=True)

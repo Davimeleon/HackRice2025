@@ -31,14 +31,14 @@ def generate_persona(answers, text_path=None):
     response = model.generate_content(prompt)
     return response.text
 
-def generate_conversation(user_answers, user_persona, other_answers, other_persona):
+def generate_conversation(user_answers, user_persona, other_answers, other_persona, user_name, other_name):
     prompt = (
         f"Generate a realistic dating conversation between two bots.\n"
-        f"User bot persona: {user_persona}\n"
-        f"Other bot persona: {other_persona}\n"
+        f"User bot (named {user_name}) persona: {user_persona}\n"
+        f"Other bot (named {other_name}) persona: {other_persona}\n"
         f"User profile: {json.dumps(user_answers)}\n"
         f"Other profile: {json.dumps(other_answers)}\n"
-        "Simulate a back-and-forth chat with exactly 20 lines of dialogue (10 messages from each bot, alternating), where each bot responds in their respective style, reflecting their interests and personality. Format as:\nYou: Message\nOther: Message\nYou: Message\n..."
+        "Simulate a back-and-forth chat with exactly 20 lines of dialogue (10 messages from each bot, alternating), where each bot responds in their respective style, reflecting their interests and personality. Start with something similar to the pickup lines they gave. Format as:\n{user_name}: Message\n{other_name}: Message\n{user_name}: Message\n..."
     )
     model = genai.GenerativeModel('gemini-1.5-flash')
     response = model.generate_content(prompt)

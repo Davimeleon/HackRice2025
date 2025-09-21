@@ -15,11 +15,11 @@ def init_db():
         CREATE TABLE IF NOT EXISTS clones (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             user_id INTEGER NOT NULL,
-            answers_json TEXT NOT NULL, -- JSON of question answers
-            text_path TEXT, -- Path to uploaded text file
-            profile_pic_path TEXT, -- Path to uploaded profile picture
-            llm_conversation TEXT, -- Stored LLM interaction
-            persona TEXT, -- LLM-generated persona summary for bot
+            answers_json TEXT NOT NULL,
+            text_path TEXT,
+            persona TEXT,
+            profile_pic_path TEXT,
+            name TEXT NOT NULL,
             FOREIGN KEY (user_id) REFERENCES users(id)
         )
     ''')

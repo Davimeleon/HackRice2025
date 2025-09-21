@@ -1,96 +1,109 @@
 {% extends 'base.html' %}
-   {% block title %}Create Clone{% endblock %}
-   {% block content %}
-   <div class="form-container">
-       <h2>{{ 'Restart Your' if pre_filled_answers else 'Create Your' }} {{ app_name }} Clone</h2>
-       <p class="intro-text">Answer these questions to help us build your AI clone. Feel free to skip any question by leaving it blank or selecting 'Skip'. Your responses will shape how your clone interacts in the dating world!</p>
-       
-       <!-- Display flash messages for errors or success -->
-       {% with messages = get_flashed_messages(with_categories=true) %}
-       {% if messages %}
-       {% for category, message in messages %}
-       <div class="message {{ category }}">{{ message }}</div>
-       {% endfor %}
-       {% endif %}
-       {% endwith %}
-       
-       <form method="POST" enctype="multipart/form-data" id="clone-form">
-           {{ form.hidden_tag() }}
-           <div class="questions-section">
-               {% for q in form.questions %}
-               <div class="question-card">
-                   <h3>{{ q.text }}</h3>
-                   {% if q.type == 'multiple-choice' %}
-                   <select name="{{ q.id }}" class="form-select">
-                       <option value="">Skip (optional)</option>
-                       {% for opt in q.options %}
-                       <option value="{{ opt }}" {% if pre_filled_answers[q.id] == opt %}selected{% endif %}>{{ opt }}</option>
-                       {% endfor %}
-                   </select>
-                   {% elif q.type == 'text' %}
-                   <textarea name="{{ q.id }}" class="form-textarea" placeholder="Your answer (optional)">{{ pre_filled_answers[q.id] or '' }}</textarea>
-                   {% endif %}
-               </div>
-               {% endfor %}
-           </div>
-           <div class="upload-section">
-               <h3>Upload Your Files (Optional)</h3>
-               <p>Provide a text file of your sample text messages to refine your clone's conversation style (.txt only).</p>
-               <label>
-                   {{ form.text_file.label }}
-                   {{ form.text_file(class="form-input-file", accept=".txt") }}
-               </label>
-               <p>Upload a profile picture to personalize your clone (.jpg, .png, .jpeg).</p>
-               <label>
-                   {{ form.profile_pic.label }}
-                   {{ form.profile_pic(class="form-input-file", accept=".jpg,.png,.jpeg", id="profile-pic-input") }}
-               </label>
-               <!-- Profile picture preview -->
-               <div id="profile-pic-preview" style="display: none; margin-top: 1rem;">
-                   <img id="preview-img" class="profile-pic" alt="Profile Picture Preview">
-               </div>
-           </div>
-           {{ form.submit(class="form-submit", value=('Update Clone' if pre_filled_answers else 'Create Clone')) }}
-       </form>
-   </div>
-   
-   <script>
-       // Client-side file validation and profile picture preview
-       document.getElementById('clone-form').addEventListener('submit', function(event) {
-           const textFile = document.querySelector('input[name="text_file"]').files[0];
-           const profilePic = document.querySelector('#profile-pic-input').files[0];
-           
-           // Validate text file
-           if (textFile && !textFile.name.match(/\.(txt)$/i)) {
-               alert('Text file must be a .txt file.');
-               event.preventDefault();
-               return;
-           }
-           
-           // Validate profile picture
-           if (profilePic && !profilePic.name.match(/\.(jpg|png|jpeg)$/i)) {
-               alert('Profile picture must be a .jpg, .png, or .jpeg file.');
-               event.preventDefault();
-               return;
-           }
-       });
-       
-       // Profile picture preview
-       document.getElementById('profile-pic-input').addEventListener('change', function(event) {
-           const file = event.target.files[0];
-           const previewDiv = document.getElementById('profile-pic-preview');
-           const previewImg = document.getElementById('preview-img');
-           
-           if (file && file.type.startsWith('image/')) {
-               const reader = new FileReader();
-               reader.onload = function(e) {
-                   previewImg.src = e.target.result;
-                   previewDiv.style.display = 'block';
-               };
-               reader.readAsDataURL(file);
-           } else {
-               previewDiv.style.display = 'none';
-           }
-       });
-   </script>
+     {% block title %}Create Clone{% endblock %}
+     {% block content %}
+     <div class="form-container">
+         <h2>{{ 'Restart Your' if pre_filled_answers else 'Create Your' }} {{ app_name }} Clone</h2>
+         <p class="intro-text">Answer these questions to help us build your AI clone. Feel free to skip any question by leaving it blank or selecting 'Skip'. Your responses will shape how your clone interacts in the dating world!</p>
+         
+         <!-- Display flash messages for errors or success -->
+         {% with messages = get_flashed_messages(with_categories=true) %}
+         {% if messages %}
+         {% for category, message in messages %}
+         <div class="message {{ category }}">{{ message }}</div>
+         {% endfor %}
+         {% endif %}
+         {% endwith %}
+         
+         <form method="POST" enctype="multipart/form-data" id="clone-form">
+             {{ form.hidden_tag() }}
+             <div>
+                 <label>
+                     {{ form.name.label }}
+                     {{ form.name(class="form-input", placeholder="Enter your clone's name", value=(pre_filled_name or '')) }}
+                 </label>
+             </div>
+             <div class="questions-section">
+                 {% for q in form.questions %}
+                 <div class="question-card">
+                     <h3>{{ q.text }}</h3>
+                     {% if q.type == 'multiple-choice' %}
+                     <select name="{{ q.id }}" class="form-select">
+                         <option value="">Skip (optional)</option>
+                         {% for opt in q.options %}
+                         <option value="{{ opt }}" {% if pre_filled_answers[q.id] == opt %}selected{% endif %}>{{ opt }}</option>
+                         {% endfor %}
+                     </select>
+                     {% elif q.type == 'text' %}
+                     <textarea name="{{ q.id }}" class="form-textarea" placeholder="Your answer (optional)">{{ pre_filled_answers[q.id] or '' }}</textarea>
+                     {% endif %}
+                 </div>
+                 {% endfor %}
+             </div>
+             <div class="upload-section">
+                 <h3>Upload Your Files (Optional)</h3>
+                 <p>Provide a text file of your sample text messages to refine your clone's conversation style (.txt only).</p>
+                 <label>
+                     {{ form.text_file.label }}
+                     {{ form.text_file(class="form-input-file", accept=".txt") }}
+                 </label>
+                 <p>Upload a profile picture to personalize your clone (.jpg, .png, .jpeg).</p>
+                 <label>
+                     {{ form.profile_pic.label }}
+                     {{ form.profile_pic(class="form-input-file", accept=".jpg,.png,.jpeg", id="profile-pic-input") }}
+                 </label>
+                 <!-- Profile picture preview -->
+                 <div id="profile-pic-preview" style="display: none; margin-top: 1rem;">
+                     <img id="preview-img" class="profile-pic" alt="Profile Picture Preview">
+                 </div>
+             </div>
+             {{ form.submit(class="form-submit", value=('Update Clone' if pre_filled_answers else 'Create Clone')) }}
+         </form>
+     </div>
+     
+     <script>
+         // Client-side file validation and profile picture preview
+         document.getElementById('clone-form').addEventListener('submit', function(event) {
+             const textFile = document.querySelector('input[name="text_file"]').files[0];
+             const profilePic = document.querySelector('#profile-pic-input').files[0];
+             const name = document.querySelector('input[name="name"]').value;
+             
+             if (!name || name.length < 2) {
+                 alert('Please enter a valid clone name (at least 2 characters).');
+                 event.preventDefault();
+                 return;
+             }
+             
+             // Validate text file
+             if (textFile && !textFile.name.match(/\.(txt)$/i)) {
+                 alert('Text file must be a .txt file.');
+                 event.preventDefault();
+                 return;
+             }
+             
+             // Validate profile picture
+             if (profilePic && !profilePic.name.match(/\.(jpg|png|jpeg)$/i)) {
+                 alert('Profile picture must be a .jpg, .png, or .jpeg file.');
+                 event.preventDefault();
+                 return;
+             }
+         });
+         
+         // Profile picture preview
+         document.getElementById('profile-pic-input').addEventListener('change', function(event) {
+             const file = event.target.files[0];
+             const previewDiv = document.getElementById('profile-pic-preview');
+             const previewImg = document.getElementById('preview-img');
+             
+             if (file && file.type.startsWith('image/')) {
+                 const reader = new FileReader();
+                 reader.onload = function(e) {
+                     previewImg.src = e.target.result;
+                     previewDiv.style.display = 'block';
+                 };
+                 reader.readAsDataURL(file);
+             } else {
+                 previewDiv.style.display = 'none';
+             }
+         });
+     </script>
 {% endblock %}

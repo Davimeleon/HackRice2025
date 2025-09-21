@@ -2,13 +2,27 @@
 {% block title %}Home{% endblock %}
 {% block content %}
 <div class="home-container">
-    <h2>Welcome, {{ session.username }}!</h2>
+    <div class="welcome-section">
+             <h2>Welcome {{ username }}!</h2>
+             {% if has_clone %}
+             <img src="{{ profile_pic_path }}" alt="Your Clone Profile" class="welcome-profile-pic">
+             {% endif %}
+         </div>
     <p>Ready to find your perfect match?</p>
     <div class="action-rectangles">
-        <a href="{{ url_for('create_clone') }}" class="action-rectangle">
-            <h3>Create a Clone</h3>
-            <p>Build your AI clone to represent you in the dating world.</p>
-        </a>
+        <div class="action-rectangles">
+            {% if not has_clone %}
+            <a href="{{ url_for('create_clone') }}" class="action-rectangle">
+                <h3>Create a Clone</h3>
+                <p>Build your AI clone to represent you in the dating world.</p>
+            </a>
+            {% else %}
+            <a href="{{ url_for('create_clone') }}" class="action-rectangle">
+                <h3>Restart Clone</h3>
+                <p>Update or restart your AI clone.</p>
+            </a>
+            {% endif %}
+        </div>
         <a href="{{ url_for('date_clones') }}" class="action-rectangle">
             <h3>Date Other Clones</h3>
             <p>Explore matches and see how your clone connects with others.</p>
