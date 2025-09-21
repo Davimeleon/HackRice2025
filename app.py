@@ -248,9 +248,9 @@ def date_clones():
     if not user_clone:
         flash('Create your clone first!', 'error')
         return redirect(url_for('create_clone'))
-    
     user_answers = json.loads(user_clone[0])
-    user_persona = user_clone[1]  # Fetch user's persona
+    user_persona = user_clone[1]
+    user_name = user_clone[2] if user_clone[2] is not None else 'No_Name'
     
     # Select 5 random clones (or all if fewer than 5)
     import random
@@ -259,7 +259,24 @@ def date_clones():
     clones_with_scores = []
     for clone_id, username, answers_json, other_persona, profile_pic_path, name in selected_clones:
         other_answers = json.loads(answers_json)
-        score = calculate_compatibility(user_answers, other_answers)  # LLM-based score
+        # Generate conversation for compatibility
+        conversation = generate_conversation(user_answers, user_persona, other_answers, other_persona, user_name, name or 'No_Name')
+        # Remove name prefixes from conversation
+        lines = conversation.split('\n')
+        cleaned_lines = []
+        for line in lines:
+            line = line.strip()
+            if line.startswith('You:'):
+                cleaned_lines.append(line[4:].strip())
+            elif line.startswith(f'{name or "No_Name"}:'):
+                cleaned_lines.append(line[len(name or "No_Name")+1:].strip())
+            elif line.startswith(f'{user_name}:'):
+                cleaned_lines.append(line[len(user_name)+1:].strip())
+            elif line:
+                cleaned_lines.append(line)
+        cleaned_conversation = '\n'.join(cleaned_lines)
+        score = calculate_compatibility(user_answers, other_answers, cleaned_conversation)  # Pass conversation
+        print(f'Compatibility score for {username} ({name}): {score}')  # Debug
         clones_with_scores.append({
             'id': clone_id,
             'username': username,
